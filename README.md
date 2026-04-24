@@ -8,7 +8,7 @@
 
 **"Tradición, sabor y familia en cada plato"**
 
-[[📱 App de Pedidos](https://TU-LINK-AQUÍ)](https://TU-LINK-AQUÍ)
+https://github.com/guillecrispin7-beep/Aroma-y-Tierra-App
 [[📑 Menú Digital](https://github.com/TU-USUARIO/Aroma-y-Tierra)](https://github.com/TU-USUARIO/Aroma-y-Tierra)
 
 </div>
