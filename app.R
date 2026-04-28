@@ -12,14 +12,14 @@ library(dplyr)
 menu_datos <- data.frame(
   id = 1:40,
   Plato = c(
-    "Aguadito de Pollo","Tequenos de Lomo","Pollo Saltado","Adobo de Res con Frijol","Pollo Pachamanquero",
-    "Chuleta Frita + Menestra","Pollo Frito + Papas","Pollada Completa","Milanesa de Pollo","Spaguetty Huancaina con Lomo",
-    "Lomo Saltado","Tallarin Saltado de Pollo","Arroz Chaufa de Pollo","Seco de Res con Frijol","Cau Cau de Mondongo",
-    "Aji de Gallina","Estofado de Pollo","Chicharron de Cerdo","Ceviche de Pescado","Arroz con Mariscos",
-    "Jalea Mixta","Parihuela","Sudado de Pescado","Tacu Tacu con Lomo","Anticuchos de Corazon",
-    "Rocoto Relleno Arequipeno","Carapulcra con Sopa Seca","Papa a la Huancaina","Ocopa Arequipena","Solterito de Queso",
-    "Caldo de Gallina","Sancochado Limeno","Chupe de Camarones","Escabeche de Pescado","Olluquito con Charqui",
-    "Locro de Zapallo","Chanfainita","Arroz con Pato","Cabrito a la Nortena","Pachamanca a la Olla"
+    "Aguadito de Pollo", "Tequeños de Lomo", "Pollo Saltado", "Adobo de Res con Frijol", "Pollo Pachamanquero", # 5
+    "Chuleta Frita + Menestra", "Pollo Frito + Papas", "Pollada Completa", "Milanesa de Pollo", "Spaguetty Huancaina con Lomo", # 10
+    "Lomo Saltado", "Tallarin Saltado de Pollo", "Arroz Chaufa de Pollo", "Seco de Res con Frijol", "Cau Cau de Mondongo", # 15
+    "Aji de Gallina", "Estofado de Pollo", "Chicharron de Cerdo", "Ceviche de Pescado", "Arroz con Mariscos", # 20
+    "Jalea Mixta", "Parihuela", "Sudado de Pescado", "Tacu Tacu con Lomo", "Anticuchos de Corazon", # 25
+    "Rocoto Relleno Arequipeño", "Carapulcra con Sopa Seca", "Papa a la Huancaina", "Ocopa Arequipeña", "Solterito de Queso", # 30
+    "Caldo de Gallina", "Sancochado Limeño", "Chupe de Camarones", "Escabeche de Pescado", "Olluquito con Charqui", # 35
+    "Locro de Zapallo", "Chanfainita", "Arroz con Pato", "Cabrito a la Norteña", "Pachamanca a la Olla" # 40
   ),
   Precio_Salon = c(
     13,13,13,15,15,15,27,25,16,16,
@@ -34,10 +34,10 @@ menu_datos <- data.frame(
     19,18,17,16,26,27,24,25,23,26
   ),
   Categoria = c(
-    "Entrada","Entrada","Menu del Dia","Ejecutivo",
-    "Especial","Especial","Menu del Dia","Carta","Carta",
-    "Carta","Carta","Carta","Especial","Especial",
-    "Criollo","Criollo","Especial","Marino","Marino",
+    "Entrada","Entrada","Menu del Dia","Ejecutivo","Especial",
+    "Especial","Menu del Dia","Carta","Carta","Carta",
+    "Carta","Carta","Especial","Especial","Criollo",
+    "Criollo","Especial","Marino","Marino","Marino",
     "Marino","Marino","Marino","Criollo","Entrada",
     "Regional","Regional","Entrada","Entrada","Entrada",
     "Sopa","Sopa","Sopa","Marino","Criollo",
@@ -145,7 +145,7 @@ server <- function(input, output, session) {
     valueBox(nrow(menu_datos), "Platos en Carta", icon = icon("concierge-bell"), color = "red")
   })
   output$precio_min <- renderValueBox({
-    valueBox(paste0("S/. ", min(menu_datos$Precio_Salon)), "Plato Economico", icon = icon("dollar-sign"), color = "green")
+    valueBox(paste0("S/. ", min(menu_datos$Precio_Salon)), "Plato Económico", icon = icon("dollar-sign"), color = "green")
   })
   output$precio_max <- renderValueBox({
     valueBox(paste0("S/. ", max(menu_datos$Precio_Salon)), "Plato Premium", icon = icon("star"), color = "yellow")
@@ -196,36 +196,47 @@ server <- function(input, output, session) {
   output$total_pagar <- renderText({ paste0("TOTAL A PAGAR: S/. ", total()) })
 
   output$pedido_final <- renderPrint({
-    req(input$run_whatsapp, nrow(carrito()) > 0)
+    req(input$nombre, input$celular, nrow(carrito()) > 0)
+    
     cat("CLIENTE:", input$nombre, "\n")
     cat("CELULAR:", input$celular, "\n")
-    cat("DIRECCION:", input$direccion, "\n\n")
-    cat("PEDIDO:\n")
-    apply(carrito(), 1, function(x) cat(x[4],"x",x[2],"S/.",x[3],"\n"))
-    cat("\nTOTAL: S/.", total())
+    if(input$tipo_precio == "llevar") {
+      cat("DIRECCIÓN:", input$direccion, "\n")
+    }
+    cat("\nPEDIDO:\n")
+    apply(carrito(), 1, function(x) cat(x[4],"x",x[2],"a S/.",x[3]," c/u\n"))
+    cat("\nTOTAL: S/.", total(), "\n")
+    cat("TIPO DE PEDIDO:", ifelse(input$tipo_precio == "llevar", "Para Llevar", "Comer en Local"), "\n")
   })
 
   observeEvent(input$run_whatsapp, {
     req(nrow(carrito()) > 0, input$nombre!= "", input$celular!= "")
 
-    items <- paste(apply(carrito(), 1, function(x) paste0(x[4],"x ",x[2]," S/.",x[3])), collapse = "%0A")
-    tipo <- ifelse(input$tipo_precio == "llevar", "PARA LLEVAR", "COMER EN LOCAL")
+    items_list <- apply(carrito(), 1, function(x) paste0(x[4],"x ",x[2]," a S/.",x[3]," c/u"))
+    items_formatted <- paste(items_list, collapse = "%0A")
+    
+    tipo_pedido_str <- ifelse(input$tipo_precio == "llevar", "PARA LLEVAR", "COMER EN LOCAL")
 
     texto <- paste0("Hola Aroma y Tierra! 👋%0A",
                     "*PEDIDO DESDE APP*%0A%0A",
-                    "*Cliente:* ", input$nombre, "%0A",
-                    "*Celular:* ", input$celular, "%0A",
-                    "*Tipo:* ", tipo, "%0A",
-                    if(input$tipo_precio == "llevar") paste0("*Direccion:* ", input$direccion, "%0A") else "",
-                    "%0A*PEDIDO:*%0A", items,
+                    "*Cliente:* ", URLencode(input$nombre), "%0A",
+                    "*Celular:* ", URLencode(input$celular), "%0A",
+                    "*Tipo de Pedido:* ", tipo_pedido_str, "%0A",
+                    if(input$tipo_precio == "llevar" && input$direccion != "") paste0("*Dirección:* ", URLencode(input$direccion), "%0A") else "",
+                    "%0A*PEDIDO:*%0A", items_formatted,
                     "%0A%0A*TOTAL: S/. ", total(), "*")
 
     url <- paste0("https://wa.me/51987654321?text=", texto)
 
     showModal(modalDialog(
       title = "Pedido Listo para Enviar",
+      tags$p("Se abrirá WhatsApp con el siguiente mensaje pre-escrito:"),
+      tags$hr(),
+      tags$p(class="text-left", style="white-space: pre-wrap;", gsub("%0A", "\n", URLdecode(texto))),
+      tags$hr(),
       tags$a(href=url, "Abrir WhatsApp", target="_blank", class="btn btn-success btn-lg"),
-      easyClose = TRUE
+      easyClose = TRUE,
+      footer = modalButton("Cerrar")
     ))
   })
 
@@ -234,7 +245,8 @@ server <- function(input, output, session) {
     barplot(table(menu_datos$Categoria), col = "#D9232D", main = "Platos por Categoria", las = 2, cex.names = 0.8)
   })
   output$top_precios <- renderDT({
-    datatable(menu_datos[order(-menu_datos$Precio_Salon), c("Plato", "Precio_Salon")], options = list(pageLength = 5))
+    datatable(menu_datos[order(-menu_datos$Precio_Salon), c("Plato", "Precio_Salon")][1:10,],
+              options = list(pageLength = 10, dom = 't'), rownames = FALSE)
   })
 }
 
@@ -242,3 +254,4 @@ server <- function(input, output, session) {
 # 5. LANZAR APP
 # ==============================================
 shinyApp(ui = ui, server = server)
+               
